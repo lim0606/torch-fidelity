@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 
+import numpy as np
 import torch
+from torch_fidelity.registry import NOISE_SOURCE_REGISTRY
 
 
 class GenerativeModelBase(ABC, torch.nn.Module):
@@ -32,3 +34,9 @@ class GenerativeModelBase(ABC, torch.nn.Module):
         Number of classes used by a conditional generative model. Must return zero for unconditional models.
         """
         pass
+
+    def sample_z(self, sz, rng=None):
+        if rng is None:
+            rng = np.random.RandomState(None)
+        noise = NOISE_SOURCE_REGISTRY[self.z_type](rng, (sz, self.z_size))
+        return noise

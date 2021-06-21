@@ -140,7 +140,10 @@ def get_featuresdict_from_generative_model(gen_model, feat_extractor, num_sample
 
     out = None
 
-    rng = np.random.RandomState(rng_seed)
+    if rng_seed is not None:
+        rng = np.random.RandomState(rng_seed)
+    else:
+        rng = None
 
     if cuda:
         gen_model.cuda()
@@ -151,12 +154,19 @@ def get_featuresdict_from_generative_model(gen_model, feat_extractor, num_sample
             sample_end = min(sample_start + batch_size, num_samples)
             sz = sample_end - sample_start
 
-            noise = NOISE_SOURCE_REGISTRY[gen_model.z_type](rng, (sz, gen_model.z_size))
+            if rng is not None:
+                #noise = NOISE_SOURCE_REGISTRY[gen_model.z_type](rng, (sz, gen_model.z_size))
+                noise = gen_model.sample_z(sz, rng)
+            else:
+                noise = gen_model.sample_z(sz)
             if cuda:
                 noise = noise.cuda(non_blocking=True)
             gen_args = [noise]
             if gen_model.num_classes > 0:
-                cond_labels = torch.from_numpy(rng.randint(low=0, high=gen_model.num_classes, size=(sz,), dtype=np.int))
+                if rng is not None:
+                    cond_labels = torch.from_numpy(rng.randint(low=0, high=gen_model.num_classes, size=(sz,), dtype=np.int))
+                else:
+                    cond_labels = torch.from_numpy(np.random.randint(low=0, high=gen_model.num_classes, size=(sz,), dtype=np.int))
                 if cuda:
                     cond_labels = cond_labels.cuda(non_blocking=True)
                 gen_args.append(cond_labels)
