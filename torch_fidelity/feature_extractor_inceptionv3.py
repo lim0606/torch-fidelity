@@ -2,6 +2,7 @@
 #   https://github.com/mseitzer/pytorch-fid/blob/master/src/pytorch_fid/inception.py
 #   Distributed under Apache License 2.0: https://github.com/mseitzer/pytorch-fid/blob/master/LICENSE
 
+import os
 import sys
 from contextlib import redirect_stdout
 
@@ -11,7 +12,7 @@ import torch.nn.functional as F
 from torch.hub import load_state_dict_from_url
 
 from torch_fidelity.feature_extractor_base import FeatureExtractorBase
-from torch_fidelity.helpers import vassert
+from torch_fidelity.helpers import get_kwarg, vassert
 from torch_fidelity.interpolate_compat_tensorflow import interpolate_bilinear_2d_like_tensorflow1x
 
 # InceptionV3 weights converted from the official TensorFlow weights using utils/util_convert_inception_weights.py
@@ -80,7 +81,10 @@ class FeatureExtractorInceptionV3(FeatureExtractorBase):
 
         if feature_extractor_weights_path is None:
             with redirect_stdout(sys.stderr):
-                state_dict = load_state_dict_from_url(URL_INCEPTION_V3, progress=True)
+                cache_root = get_kwarg('cache_root', kwargs)
+                if cache_root is None:
+                    cache_root = torch.hub._get_torch_home()
+                state_dict = load_state_dict_from_url(URL_INCEPTION_V3, progress=True, model_dir=os.path.join(cache_root, "hub/checkpoints"))#, map_location='cpu')
         else:
             state_dict = torch.load(feature_extractor_weights_path)
         self.load_state_dict(state_dict)

@@ -2,6 +2,7 @@
 #   https://github.com/richzhang/PerceptualSimilarity/blob/master/lpips/pretrained_networks.py
 #   https://github.com/richzhang/PerceptualSimilarity/blob/master/lpips/lpips.py
 #   Distributed under BSD 2-Clause: https://github.com/richzhang/PerceptualSimilarity/blob/master/LICENSE
+import os
 import sys
 from contextlib import redirect_stdout
 
@@ -10,7 +11,7 @@ import torch.nn as nn
 import torchvision
 from torch.hub import load_state_dict_from_url
 
-from torch_fidelity.helpers import vassert
+from torch_fidelity.helpers import get_kwarg, vassert
 from torch_fidelity.sample_similarity_base import SampleSimilarityBase
 
 # VGG16 pretrained weights from torchvision models hub
@@ -25,12 +26,18 @@ URL_VGG16_LPIPS = 'https://github.com/toshas/torch-fidelity/releases/download/v0
 
 
 class VGG16features(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, cache_root=torch.hub._get_torch_home()):
         super().__init__()
-        vgg_pretrained_features = torchvision.models.vgg16(pretrained=False)
-        with redirect_stdout(sys.stderr):
-            vgg_pretrained_features.load_state_dict(load_state_dict_from_url(URL_VGG16_BASE))
-        vgg_pretrained_features = vgg_pretrained_features.features
+        raise NotImplementedError("Unknown error. RuntimeError: DataLoader worker (pid 13249) is killed by signal: Killed.")
+        vgg_pretrained_model = torchvision.models.vgg16(pretrained=False)
+        #with redirect_stdout(sys.stderr):
+        try:
+            state_dict = load_state_dict_from_url(URL_VGG16_BASE, progress=True, model_dir=os.path.join(cache_root, "hub/checkpoints"))#, map_location='cpu')
+        except:
+            from torch.utils.model_zoo import load_url as load_state_dict_from_url
+            state_dict = load_state_dict_from_url(URL_VGG16_BASE, progress=True, model_dir=os.path.join(cache_root, "hub/checkpoints"))#, map_location='cpu')
+        vgg_pretrained_model.load_state_dict(state_dict)
+        vgg_pretrained_features = vgg_pretrained_model.features
         self.slice1 = torch.nn.Sequential()
         self.slice2 = torch.nn.Sequential()
         self.slice3 = torch.nn.Sequential()
@@ -120,10 +127,13 @@ class SampleSimilarityLPIPS(SampleSimilarityBase):
         self.lin3 = NetLinLayer(self.chns[3], use_dropout=True)
         self.lin4 = NetLinLayer(self.chns[4], use_dropout=True)
         self.lins = [self.lin0, self.lin1, self.lin2, self.lin3, self.lin4]
+        cache_root = get_kwarg('cache_root', kwargs)
+        if cache_root is None:
+            cache_root = torch.hub._get_torch_home()
         with redirect_stdout(sys.stderr):
-            state_dict = load_state_dict_from_url(URL_VGG16_LPIPS, map_location='cpu', progress=True)
+            state_dict = load_state_dict_from_url(URL_VGG16_LPIPS, progress=True, model_dir=os.path.join(cache_root, "hub/checkpoints"))#, map_location='cpu')
         self.load_state_dict(state_dict)
-        self.net = VGG16features()
+        self.net = VGG16features(cache_root=cache_root)
         self.eval()
         for param in self.parameters():
             param.requires_grad = False
