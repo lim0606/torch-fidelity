@@ -32,10 +32,10 @@ class VGG16features(torch.nn.Module):
         vgg_pretrained_model = torchvision.models.vgg16(pretrained=False)
         #with redirect_stdout(sys.stderr):
         try:
-            state_dict = load_state_dict_from_url(URL_VGG16_BASE, progress=True, model_dir=os.path.join(cache_root, "hub/checkpoints"))#, map_location='cpu')
+            state_dict = load_state_dict_from_url(URL_VGG16_BASE, progress=True, model_dir=os.path.join(cache_root, "checkpoints"))#, map_location='cpu')
         except:
             from torch.utils.model_zoo import load_url as load_state_dict_from_url
-            state_dict = load_state_dict_from_url(URL_VGG16_BASE, progress=True, model_dir=os.path.join(cache_root, "hub/checkpoints"))#, map_location='cpu')
+            state_dict = load_state_dict_from_url(URL_VGG16_BASE, progress=True, model_dir=os.path.join(cache_root, "checkpoints"))#, map_location='cpu')
         vgg_pretrained_model.load_state_dict(state_dict)
         vgg_pretrained_features = vgg_pretrained_model.features
         self.slice1 = torch.nn.Sequential()
@@ -131,7 +131,7 @@ class SampleSimilarityLPIPS(SampleSimilarityBase):
         if cache_root is None:
             cache_root = torch.hub._get_torch_home()
         with redirect_stdout(sys.stderr):
-            state_dict = load_state_dict_from_url(URL_VGG16_LPIPS, progress=True, model_dir=os.path.join(cache_root, "hub/checkpoints"))#, map_location='cpu')
+            state_dict = load_state_dict_from_url(URL_VGG16_LPIPS, progress=True, model_dir=os.path.join(cache_root, "checkpoints"))#, map_location='cpu')
         self.load_state_dict(state_dict)
         self.net = VGG16features(cache_root=cache_root)
         self.eval()

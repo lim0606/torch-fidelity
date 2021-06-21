@@ -84,9 +84,9 @@ def batch_interp(a, b, t, method):
     return fn_interpolate(a, b, t)
 
 
-def get_featuresdict_from_dataset(input, feat_extractor, batch_size, cuda, save_cpu_ram, verbose):
+def get_featuresdict_from_dataset(input, feat_extractor, batch_size, cuda, save_cpu_ram, verbose, max_num_workers=4):
     vassert(isinstance(input, Dataset), 'Input can only be a Dataset instance')
-    vassert(torch.is_tensor(input[0]), 'Input Dataset should return torch.Tensor')
+    #vassert(torch.is_tensor(input[0]), 'Input Dataset should return torch.Tensor')
     vassert(
         isinstance(feat_extractor, FeatureExtractorBase), 'Feature extractor is not a subclass of FeatureExtractorBase'
     )
@@ -94,7 +94,7 @@ def get_featuresdict_from_dataset(input, feat_extractor, batch_size, cuda, save_
     if batch_size > len(input):
         batch_size = len(input)
 
-    num_workers = 0 if save_cpu_ram else min(4, 2 * multiprocessing.cpu_count())
+    num_workers = 0 if save_cpu_ram else min(max_num_workers, 2 * multiprocessing.cpu_count())
 
     dataloader = DataLoader(
         input,
@@ -108,7 +108,7 @@ def get_featuresdict_from_dataset(input, feat_extractor, batch_size, cuda, save_
 
     with tqdm(disable=not verbose, leave=False, unit='samples', total=len(input), desc='Processing samples') as t, \
             torch.no_grad():
-        for bid, batch in enumerate(dataloader):
+        for bid, (batch, _) in enumerate(dataloader):
             if cuda:
                 batch = batch.cuda(non_blocking=True)
 
@@ -299,9 +299,10 @@ def cache_lookup_one_recompute_on_miss(cached_filename, fn_recompute, **kwargs):
         return fn_recompute()
     cache_root = get_kwarg('cache_root', kwargs)
     if cache_root is None:
-        cache_root = os.path.join(torch.hub._get_torch_home(), 'fidelity_cache')
-    os.makedirs(cache_root, exist_ok=True)
-    item_path = os.path.join(cache_root, cached_filename + '.pt')
+        cache_root = torch.hub._get_torch_home()
+    cache_path = os.path.join(cache_root, 'fidelity_cache')
+    os.makedirs(cache_path, exist_ok=True)
+    item_path = os.path.join(cache_path, cached_filename + '.pt')
     if os.path.exists(item_path):
         vprint(get_kwarg('verbose', kwargs), f'Loading cached {item_path}')
         return torch.load(item_path, map_location='cpu')
@@ -318,9 +319,10 @@ def cache_lookup_group_recompute_all_on_any_miss(cached_filename_prefix, item_na
         return fn_recompute()
     cache_root = get_kwarg('cache_root', kwargs)
     if cache_root is None:
-        cache_root = os.path.join(torch.hub._get_torch_home(), 'fidelity_cache')
-    os.makedirs(cache_root, exist_ok=True)
-    cached_paths = [os.path.join(cache_root, cached_filename_prefix + a + '.pt') for a in item_names]
+        cache_root = torch.hub._get_torch_home()
+    cache_path = os.path.join(cache_root, 'fidelity_cache')
+    os.makedirs(cache_path, exist_ok=True)
+    cached_paths = [os.path.join(cache_path, cached_filename_prefix + a + '.pt') for a in item_names]
     if all([os.path.exists(a) for a in cached_paths]):
         out = {}
         for n, p in zip(item_names, cached_paths):
@@ -339,10 +341,11 @@ def extract_featuresdict_from_input_id(input_id, feat_extractor, **kwargs):
     cuda = get_kwarg('cuda', kwargs)
     rng_seed = get_kwarg('rng_seed', kwargs)
     verbose = get_kwarg('verbose', kwargs)
+    max_num_workers = get_kwarg('max_num_workers', kwargs)
     input = prepare_input_from_id(input_id, **kwargs)
     if isinstance(input, Dataset):
         save_cpu_ram = get_kwarg('save_cpu_ram', kwargs)
-        featuresdict = get_featuresdict_from_dataset(input, feat_extractor, batch_size, cuda, save_cpu_ram, verbose)
+        featuresdict = get_featuresdict_from_dataset(input, feat_extractor, batch_size, cuda, save_cpu_ram, verbose, max_num_workers)
     else:
         input_desc = prepare_input_descriptor_from_input_id(input_id, **kwargs)
         num_samples = input_desc['input_model_num_samples']

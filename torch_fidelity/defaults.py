@@ -47,4 +47,5 @@ DEFAULTS = {
     'rng_seed': 2020,
     'save_cpu_ram': False,
     'verbose': True,
+    'max_num_workers': 4,
 }

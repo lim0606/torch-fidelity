@@ -1,6 +1,7 @@
 import os
 
-from torch_fidelity.datasets import TransformPILtoRGBTensor, Cifar10_RGB, STL10_RGB
+from torchvision.datasets import CIFAR10, STL10
+from torch_fidelity.datasets import TransformPILtoRGBTensor
 from torch_fidelity.feature_extractor_base import FeatureExtractorBase
 from torch_fidelity.feature_extractor_inceptionv3 import FeatureExtractorInceptionV3
 from torch_fidelity.helpers import vassert
@@ -133,23 +134,23 @@ def register_interpolation(name, fn_interpolate):
 
 register_dataset(
     'cifar10-train',
-    lambda root, download: Cifar10_RGB(root, train=True, transform=TransformPILtoRGBTensor(), download=download)
+    lambda root, download: CIFAR10(os.path.join(root, 'cifar10'), train=True, transform=TransformPILtoRGBTensor(), download=download)
 )
 register_dataset(
     'cifar10-val',
-    lambda root, download: Cifar10_RGB(root, train=False, transform=TransformPILtoRGBTensor(), download=download)
+    lambda root, download: CIFAR10(os.path.join(root, 'cifar10'), train=False, transform=TransformPILtoRGBTensor(), download=download)
 )
 register_dataset(
     'stl10-train',
-    lambda root, download: STL10_RGB(root, split='train', transform=TransformPILtoRGBTensor(), download=download)
+    lambda root, download: STL10(os.path.join(root, 'stl10'), split='train', transform=TransformPILtoRGBTensor(), download=download)
 )
 register_dataset(
     'stl10-test',
-    lambda root, download: STL10_RGB(root, split='test', transform=TransformPILtoRGBTensor(), download=download)
+    lambda root, download: STL10(os.path.join(root, 'stl10'), split='test', transform=TransformPILtoRGBTensor(), download=download)
 )
 register_dataset(
     'stl10-unlabeled',
-    lambda root, download: STL10_RGB(root, split='unlabeled', transform=TransformPILtoRGBTensor(), download=download)
+    lambda root, download: STL10(os.path.join(root, 'stl10'), split='unlabeled', transform=TransformPILtoRGBTensor(), download=download)
 )
 
 register_feature_extractor('inception-v3-compat', FeatureExtractorInceptionV3)

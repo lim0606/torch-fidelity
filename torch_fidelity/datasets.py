@@ -9,7 +9,10 @@ from torchvision.datasets import CIFAR10, STL10
 from torch_fidelity.helpers import vassert
 
 
-class TransformPILtoRGBTensor:
+class TransformPILtoRGBTensor(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+
     def __call__(self, img):
         vassert(type(img) is Image.Image, 'Input is not a PIL.Image')
         width, height = img.size
@@ -30,27 +33,27 @@ class ImagesPathDataset(Dataset):
         path = self.files[i]
         img = Image.open(path).convert('RGB')
         img = self.transforms(img)
-        return img
+        return img, torch.tensor(0).long()
 
 
-class Cifar10_RGB(CIFAR10):
-    def __init__(self, *args, **kwargs):
-        with redirect_stdout(sys.stderr):
-            super().__init__(*args, **kwargs)
-
-    def __getitem__(self, index):
-        img, target = super().__getitem__(index)
-        return img
-
-
-class STL10_RGB(STL10):
-    def __init__(self, *args, **kwargs):
-        with redirect_stdout(sys.stderr):
-            super().__init__(*args, **kwargs)
-
-    def __getitem__(self, index):
-        img, target = super().__getitem__(index)
-        return img
+#class Cifar10_RGB(CIFAR10):
+#    def __init__(self, *args, **kwargs):
+#        with redirect_stdout(sys.stderr):
+#            super().__init__(*args, **kwargs)
+#
+#    def __getitem__(self, index):
+#        img, target = super().__getitem__(index)
+#        return img, target
+#
+#
+#class STL10_RGB(STL10):
+#    def __init__(self, *args, **kwargs):
+#        with redirect_stdout(sys.stderr):
+#            super().__init__(*args, **kwargs)
+#
+#    def __getitem__(self, index):
+#        img, target = super().__getitem__(index)
+#        return img, target
 
 
 class RandomlyGeneratedDataset(Dataset):

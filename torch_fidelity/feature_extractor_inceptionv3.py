@@ -84,7 +84,7 @@ class FeatureExtractorInceptionV3(FeatureExtractorBase):
                 cache_root = get_kwarg('cache_root', kwargs)
                 if cache_root is None:
                     cache_root = torch.hub._get_torch_home()
-                state_dict = load_state_dict_from_url(URL_INCEPTION_V3, progress=True, model_dir=os.path.join(cache_root, "hub/checkpoints"))#, map_location='cpu')
+                state_dict = load_state_dict_from_url(URL_INCEPTION_V3, progress=True, model_dir=os.path.join(cache_root, "checkpoints"))#, map_location='cpu')
         else:
             state_dict = torch.load(feature_extractor_weights_path)
         self.load_state_dict(state_dict)
